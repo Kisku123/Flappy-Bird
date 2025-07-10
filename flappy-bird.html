@@ -1,0 +1,199 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flappy Bird by Ganit</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to bottom, #4facfe, #00f2fe);
+    }
+    canvas {
+      display: block;
+      margin: 0 auto;
+      background: #70c5ce;
+      box-shadow: 0 0 20px rgba(0,0,0,0.2);
+      border-radius: 12px;
+    }
+    .ad-container {
+      width: 100%;
+      text-align: center;
+      margin-top: 10px;
+    }
+  </style>
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9784980252214847" crossorigin="anonymous"></script>
+</head>
+<body>
+  <canvas id="gameCanvas" width="320" height="480"></canvas>
+  <div class="ad-container">
+    <ins class="adsbygoogle"
+      style="display:block"
+      data-ad-client="ca-pub-9784980252214847"
+      data-ad-slot="1234567890"
+      data-ad-format="auto"
+      data-full-width-responsive="true"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    let frames = 0;
+    const DEGREE = Math.PI / 180;
+
+    const state = {
+      current: 0,
+      getReady: 0,
+      game: 1,
+      over: 2
+    };
+
+    canvas.addEventListener("click", function () {
+      switch (state.current) {
+        case state.getReady:
+          state.current = state.game;
+          break;
+        case state.game:
+          bird.flap();
+          break;
+        case state.over:
+          pipes.reset();
+          bird.reset();
+          state.current = state.getReady;
+          break;
+      }
+    });
+
+    const bird = {
+      x: 50,
+      y: 150,
+      w: 34,
+      h: 26,
+      radius: 12,
+      gravity: 0.25,
+      jump: 4.6,
+      speed: 0,
+      rotation: 0,
+
+      draw: function () {
+        ctx.fillStyle = "#FFD700";
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+      },
+
+      flap: function () {
+        this.speed = -this.jump;
+      },
+
+      update: function () {
+        if (state.current === state.getReady) {
+          this.y = 150;
+          this.rotation = 0;
+        } else {
+          this.speed += this.gravity;
+          this.y += this.speed;
+
+          if (this.y + this.radius >= canvas.height) {
+            this.y = canvas.height - this.radius;
+            if (state.current === state.game) {
+              state.current = state.over;
+            }
+          }
+
+          if (this.speed >= this.jump) {
+            this.rotation = 90 * DEGREE;
+          } else {
+            this.rotation = -25 * DEGREE;
+          }
+        }
+      },
+
+      reset: function () {
+        this.speed = 0;
+        this.y = 150;
+      }
+    };
+
+    const pipes = {
+      position: [],
+      top: { y: 0 },
+      bottom: { y: 0 },
+      w: 50,
+      h: 400,
+      gap: 100,
+      dx: 2,
+
+      draw: function () {
+        for (let i = 0; i < this.position.length; i++) {
+          let p = this.position[i];
+          ctx.fillStyle = "#228B22";
+          ctx.fillRect(p.x, p.y, this.w, this.h);
+          ctx.fillRect(p.x, p.y + this.h + this.gap, this.w, this.h);
+        }
+      },
+
+      update: function () {
+        if (state.current !== state.game) return;
+
+        if (frames % 100 === 0) {
+          this.position.push({
+            x: canvas.width,
+            y: -Math.floor(Math.random() * this.h)
+          });
+        }
+
+        for (let i = 0; i < this.position.length; i++) {
+          let p = this.position[i];
+          p.x -= this.dx;
+
+          if (p.x + this.w <= 0) {
+            this.position.shift();
+          }
+
+          // Collision
+          if (
+            bird.x + bird.radius > p.x &&
+            bird.x - bird.radius < p.x + this.w &&
+            (bird.y - bird.radius < p.y + this.h ||
+              bird.y + bird.radius > p.y + this.h + this.gap)
+          ) {
+            state.current = state.over;
+          }
+        }
+      },
+
+      reset: function () {
+        this.position = [];
+      }
+    };
+
+    function draw() {
+      ctx.fillStyle = "#87CEEB";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      pipes.draw();
+      bird.draw();
+    }
+
+    function update() {
+      bird.update();
+      pipes.update();
+    }
+
+    function loop() {
+      update();
+      draw();
+      frames++;
+      requestAnimationFrame(loop);
+    }
+
+    loop();
+  </script>
+</body>
+</html>
